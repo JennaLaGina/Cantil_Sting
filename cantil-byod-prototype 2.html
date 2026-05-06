@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jabra — Cantil BYOD Settings Prototype</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/dist/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: #0f1420;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 32px 20px 48px;
+  }
+
+  /* ── Control Bar ── */
+  .ctrl-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    background: #1a2335;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 900px;
+  }
+  .ctrl-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    color: #6b7a96;
+    text-transform: uppercase;
+  }
+  .ctrl-group { display: flex; gap: 4px; }
+  .seg-btn {
+    font-size: 12px;
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: transparent;
+    color: #6b7a96;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .seg-btn:hover { background: rgba(255,255,255,0.05); color: #aab0be; }
+  .seg-btn.on {
+    background: #c8dc28;
+    border-color: #c8dc28;
+    color: #1a2335;
+    font-weight: 600;
+  }
+  .sep { width: 1px; height: 22px; background: rgba(255,255,255,0.08); margin: 0 4px; }
+  .state-pill {
+    margin-left: auto;
+    font-size: 11px;
+    color: #6b7a96;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    padding: 5px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* ── Shell ── */
+  .jabra-shell {
+    width: 100%;
+    max-width: 900px;
+    background: #1c2537;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    height: 620px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 190px;
+    min-width: 190px;
+    background: #141b28;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding-top: 6px;
+  }
+  .sidebar-logo {
+    padding: 16px 22px 20px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 9px 22px;
+    font-size: 13px;
+    color: #6b7a96;
+    cursor: default;
+    transition: color 0.15s;
+    user-select: none;
+  }
+  .nav-item.active { color: #c8dc28; }
+  .nav-item i { font-size: 17px; }
+  .nav-spacer { flex: 1; }
+
+  /* ── Main ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+  .topbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 22px 30px 0;
+  }
+  .page-title {
+    font-size: 30px;
+    font-weight: 300;
+    color: #fff;
+    padding-bottom: 14px;
+    letter-spacing: -0.3px;
+  }
+  .top-btns { display: flex; gap: 8px; padding-bottom: 14px; }
+  .top-btn {
+    font-size: 12px;
+    padding: 7px 24px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: transparent;
+    color: #8b95a8;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .top-btn:hover { background: rgba(255,255,255,0.05); }
+  .top-btn.save {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(255,255,255,0.15);
+    color: #aab0be;
+  }
+
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 0 30px;
+  }
+  .tab {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.7px;
+    color: #6b7a96;
+    padding: 13px 14px 12px;
+    cursor: default;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s;
+  }
+  .tab.active { color: #c8dc28; border-bottom-color: #c8dc28; }
+
+  /* ── Content ── */
+  .content { flex: 1; overflow-y: auto; padding: 30px 34px; }
+  .content::-webkit-scrollbar { width: 4px; }
+  .content::-webkit-scrollbar-track { background: transparent; }
+  .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  /* ── Sections ── */
+  .section { animation: fadeIn 0.18s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .row.vcenter { align-items: center; }
+
+  .s-heading { font-size: 15px; font-weight: 500; color: #e8eaf0; margin-bottom: 7px; }
+  .s-desc {
+    font-size: 12px;
+    color: #6b7a96;
+    line-height: 1.65;
+    max-width: 520px;
+  }
+  .s-desc + .s-desc { margin-top: 5px; }
+
+  .divider { height: 1px; background: rgba(255,255,255,0.07); margin: 26px 0; }
+
+  /* ── Badge ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    padding: 5px 10px 5px 11px;
+    border-radius: 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: 1px solid rgba(74,222,128,0.3);
+    color: #4ade80;
+    background: rgba(74,222,128,0.05);
+  }
+  .badge i { font-size: 13px; }
+
+  /* ── Toggle ── */
+  .toggle {
+    width: 42px;
+    height: 24px;
+    border-radius: 12px;
+    background: #22d3ee;
+    position: relative;
+    flex-shrink: 0;
+    cursor: default;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    top: 3px;
+    right: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+  /* ── Radio list ── */
+  .radio-list { display: flex; flex-direction: column; margin-top: 20px; }
+  .radio-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 0;
+    font-size: 13px;
+    color: #c8cfd9;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .radio-item:last-child { border-bottom: none; }
+  .radio-item.disabled { color: #3d4a60; }
+
+  .radio-circle {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.22);
+    background: transparent;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .radio-circle.selected { border-color: rgba(255,255,255,0.75); }
+  .radio-circle.selected::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+    top: 3px;
+    left: 3px;
+  }
+  .radio-item.disabled .radio-circle { border-color: rgba(255,255,255,0.08); }
+
+  /* ── Preview ── */
+  .preview-wrap { margin-top: 28px; }
+  .preview-label { font-size: 14px; color: #e8eaf0; margin-bottom: 12px; }
+  .preview-box {
+    background: #0d1320;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 7px;
+    padding: 20px 22px;
+    max-width: 360px;
+  }
+  .preview-jabra { font-size: 11px; color: #fff; margin-bottom: 26px; }
+  .preview-inner { display: flex; align-items: center; gap: 24px; }
+  .preview-text { font-size: 10px; color: #4a5878; line-height: 1.7; max-width: 155px; }
+  .preview-icon { color: #2a3450; font-size: 44px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="ctrl-bar">
+  <span class="ctrl-label">Sting</span>
+  <div class="ctrl-group">
+    <button class="seg-btn" id="b-unplug" onclick="set('sting','unplugged')">Unplugged</button>
+    <button class="seg-btn on" id="b-plug" onclick="set('sting','plugged')">Plugged</button>
+  </div>
+  <div class="sep"></div>
+  <span class="ctrl-label">Mode</span>
+  <div class="ctrl-group">
+    <button class="seg-btn on" id="b-jabra" onclick="set('mode','jabra')">Jabra BYOD</button>
+    <button class="seg-btn" id="b-air" onclick="set('mode','airtame')">AirTame BYOD</button>
+  </div>
+  <span class="state-pill" id="state-pill">Sting plugged · Jabra BYOD</span>
+</div>
+
+<div class="jabra-shell">
+  <div class="sidebar">
+    <div class="sidebar-logo">Jabra</div>
+    <div class="nav-item"><i class="ti ti-home"></i>Home</div>
+    <div class="nav-item"><i class="ti ti-accessible"></i>Accessibility</div>
+    <div class="nav-item active"><i class="ti ti-layout-sidebar-left-collapse"></i>System</div>
+    <div class="nav-item"><i class="ti ti-video"></i>Video</div>
+    <div class="nav-item"><i class="ti ti-volume"></i>Audio</div>
+    <div class="nav-item"><i class="ti ti-network"></i>Network</div>
+    <div class="nav-item"><i class="ti ti-settings"></i>General</div>
+    <div class="nav-item"><i class="ti ti-user"></i>Account</div>
+    <div class="nav-spacer"></div>
+    <div class="nav-item"><i class="ti ti-logout"></i>Log out</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="page-title">System</div>
+      <div class="top-btns">
+        <button class="top-btn">Cancel</button>
+        <button class="top-btn save">Save</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab">MANAGEMENT</div>
+      <div class="tab">DEVICES</div>
+      <div class="tab">CERTIFICATES</div>
+      <div class="tab active">BRING YOUR OWN DEVICE</div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<script>
+  var sting = 'plugged', mode = 'jabra';
+
+  function set(k, v) {
+    if (k === 'sting') {
+      sting = v;
+      document.getElementById('b-plug').className   = 'seg-btn' + (v === 'plugged'   ? ' on' : '');
+      document.getElementById('b-unplug').className = 'seg-btn' + (v === 'unplugged' ? ' on' : '');
+    } else {
+      mode = v;
+      document.getElementById('b-jabra').className = 'seg-btn' + (v === 'jabra'   ? ' on' : '');
+      document.getElementById('b-air').className   = 'seg-btn' + (v === 'airtame' ? ' on' : '');
+    }
+    render();
+  }
+
+  function render() {
+    var plugged  = sting === 'plugged';
+    var airtame  = mode  === 'airtame';
+    var showDP      = !plugged;
+    var showDefault = !airtame;
+    var hdmiOff     = plugged;
+
+    document.getElementById('state-pill').textContent =
+      (plugged ? 'Sting plugged' : 'Sting unplugged') + ' · ' +
+      (airtame ? 'AirTame BYOD' : 'Jabra BYOD');
+
+    var h = '<div class="section">';
+
+    /* Status */
+    h += '<div class="row vcenter">';
+    h += '<div><div class="s-heading">Status of Video Meetings</div>';
+    h += '<div class="s-desc">Bring Your Own Device active</div></div>';
+    h += '<span class="badge">Device not in use&nbsp;<i class="ti ti-info-circle"></i></span>';
+    h += '</div>';
+    h += '</div>';
+
+    /* DP Alt Mode */
+    if (showDP) {
+      h += '<div class="divider"></div>';
+      h += '<div class="section"><div class="row">';
+      h += '<div>';
+      h += '<div class="s-heading">DisplayPort Alt Mode</div>';
+      h += '<div class="s-desc">Decide whether the videobar can be used as a display over USB-C in BYOD mode.</div>';
+      h += '<div class="s-desc">When enabled: The laptop can share its screen to the meeting room monitor and use the videobar\'s camera, microphone, and speakers over a single USB-C cable.</div>';
+      h += '<div class="s-desc">When disabled: The laptop can only use the videobar as a USB device (camera, microphone, and speakers); it cannot share its screen to the meeting room monitor over USB-C.</div>';
+      h += '</div>';
+      h += '<div class="toggle"></div>';
+      h += '</div></div>';
+    }
+
+    /* Default screen */
+    if (showDefault) {
+      h += '<div class="divider"></div>';
+      h += '<div class="section">';
+      h += '<div class="s-heading">Default screen</div>';
+      h += '<div class="s-desc">Select the default screen to display on the meeting room monitor.</div>';
+      h += '<div class="radio-list">';
+
+      var opts = [
+        { label: 'USB-C cable instructions',              sel: true,  dis: false },
+        { label: 'USB-C and HDMI cable instructions',     sel: false, dis: hdmiOff },
+        { label: 'Custom wallpaper from Web Console',     sel: false, dis: false },
+        { label: 'Custom wallpaper from Jabra Plus Management', sel: false, dis: false },
+      ];
+
+      opts.forEach(function(o) {
+        h += '<div class="radio-item' + (o.dis ? ' disabled' : '') + '">';
+        h += '<span>' + o.label + '</span>';
+        h += '<div class="radio-circle' + (o.sel ? ' selected' : '') + '"></div>';
+        h += '</div>';
+      });
+
+      h += '</div>';
+
+      h += '<div class="preview-wrap">';
+      h += '<div class="preview-label">Preview of default screen</div>';
+      h += '<div class="preview-box">';
+      h += '<div class="preview-jabra">Jabra</div>';
+      h += '<div class="preview-inner">';
+      h += '<div class="preview-text">Connect the USB-C cable to your laptop to use the video bar and share your screen on the meeting room monitor.</div>';
+      h += '<i class="ti ti-plug-connected preview-icon"></i>';
+      h += '</div></div></div>';
+      h += '</div>';
+    }
+
+    document.getElementById('content').innerHTML = h;
+  }
+
+  render();
+</script>
+</body>
+</html>
